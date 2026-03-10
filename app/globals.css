@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme inline {
+  --color-vallmo: #ED5821;
+  --color-ockra: #CDAC50;
+  --color-asfalt: #303942;
+  --color-light: #F5F5F0;
+  --color-white: #FFFFFF;
+  --font-sans: 'Outfit', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@media print {
+  @page {
+    margin: 15mm;
+    size: A4;
+  }
+  body {
+    background: white;
+    font-size: 11px;
+  }
+}
+
+body {
+  background: #F5F5F0;
+  color: #303942;
+  font-family: 'Outfit', sans-serif;
+}
