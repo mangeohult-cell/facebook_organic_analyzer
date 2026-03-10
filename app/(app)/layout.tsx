@@ -7,13 +7,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await currentUser()
 
   if (user) {
-    const email = user.emailAddresses[0]?.emailAddress
-    const supabase = getSupabase()
-    const { data: whitelist } = await supabase.from('whitelist').select('email')
+    const email = user.emailAddresses[0]?.emailAddress ?? ''
 
-    // If whitelist has entries, user's email must be in it
-    if (whitelist && whitelist.length > 0) {
-      const isWhitelisted = whitelist.some((w: { email: string }) => w.email === email)
+    // Allow @sverigeslarare.se domain automatically
+    const allowedDomain = email.endsWith('@sverigeslarare.se')
+
+    if (!allowedDomain) {
+      // Fall back to individual whitelist for exceptions (e.g. mangeohult@gmail.com)
+      const supabase = getSupabase()
+      const { data: whitelist } = await supabase.from('whitelist').select('email')
+      const isWhitelisted = whitelist?.some((w: { email: string }) => w.email === email) ?? false
       if (!isWhitelisted) {
         redirect('/unauthorized')
       }
