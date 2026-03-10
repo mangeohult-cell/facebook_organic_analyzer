@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Calendar, GitCompare, Upload, Users } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const nav = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { signOut } = useClerk();
 
   return (
     <aside className="w-60 min-h-screen bg-[#303942] flex flex-col">
@@ -47,8 +49,14 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-white/10">
+      <div className="px-6 py-4 border-t border-white/10 flex items-center justify-between">
         <p className="text-white/40 text-xs">v1.0</p>
+        <button
+          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          className="text-white/40 hover:text-white text-xs transition-colors"
+        >
+          Logga ut
+        </button>
       </div>
     </aside>
   );
