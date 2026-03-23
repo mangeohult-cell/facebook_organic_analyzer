@@ -49,6 +49,10 @@ const COLUMN_MAP: Record<string, keyof RawRow> = {
   "shares": "shares",
   "lifetime post shares": "shares",
 
+  // Länkklick
+  "länkklick": "link_clicks",
+  "link clicks": "link_clicks",
+
   // Sparade
   "sparade": "saves",
   "saves": "saves",
@@ -70,6 +74,7 @@ interface RawRow {
   comments?: string;
   shares?: string;
   saves?: string;
+  link_clicks?: string;
   post_type?: string;
 }
 
@@ -163,14 +168,18 @@ export function parseFacebookCSV(csvText: string): ParseResult {
       engagement = reactions + comments + shares;
     }
 
+    const reach = toInt(raw.reach);
+    const link_clicks = toInt(raw.link_clicks);
+
     posts.push({
       title: raw.title ?? `Inlägg ${i + 1}`,
       published_at: parseDate(raw.published_at),
-      reach: toInt(raw.reach),
+      reach,
       engagement,
       reactions,
       comments,
       shares,
+      link_clicks,
       post_type: parsePostType(raw.post_type),
     });
   }

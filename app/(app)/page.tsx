@@ -1,22 +1,22 @@
 export const dynamic = "force-dynamic";
 
 import Header from "@/components/layout/Header";
-import KpiCard from "@/components/dashboard/KpiCard";
+import KpiSection, { MonthMetrics } from "@/components/dashboard/KpiSection";
 import TrendChart from "@/components/dashboard/TrendChart";
 import ContentTypeChart from "@/components/dashboard/ContentTypeChart";
 import TopPostsCard from "@/components/dashboard/TopPostsCard";
 import UnderperformersCard from "@/components/dashboard/UnderperformersCard";
 import BestMonthBadge from "@/components/dashboard/BestMonthBadge";
 import ContentRecommendationCard from "@/components/dashboard/ContentRecommendationCard";
-import TrendAlert from "@/components/dashboard/TrendAlert";
 import KeywordInsights from "@/components/dashboard/KeywordInsights";
 import FrequencyInsights from "@/components/dashboard/FrequencyInsights";
 import EmptyState from "@/components/shared/EmptyState";
-import { BarChart2, Users, TrendingUp, Activity, FileDown } from "lucide-react";
+import { FileDown } from "lucide-react";
 import Link from "next/link";
 import {
   getAllPosts,
   getFiles,
+  getFollowerCount,
   getContentTypeBreakdown,
   getTrendData,
   computeMonthStats,
@@ -24,15 +24,43 @@ import {
 import {
   getTypeInsights,
   getContentRecommendation,
-  getTrendAlerts,
   getKeywordInsights,
   getFrequencyInsights,
   calcEngRate,
 } from "@/lib/insights";
-import { formatNumber } from "@/lib/utils";
+import { Post } from "@/types";
+
+function medianAndAvg(values: number[]): { median: number; avg: number } {
+  if (values.length === 0) return { median: 0, avg: 0 };
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+  const avg = values.reduce((s, v) => s + v, 0) / values.length;
+  return { median, avg };
+}
+
+function buildMonthMetrics(posts: Post[]): MonthMetrics {
+  const linkPosts = posts.filter((p) => p.link_clicks > 0);
+  return {
+    reach:    medianAndAvg(posts.map((p) => p.reach)),
+    er:       medianAndAvg(posts.map((p) => calcEngRate(p))),
+    ctr:      medianAndAvg(linkPosts.map((p) => p.ctr)),
+    virality: medianAndAvg(posts.map((p) => p.reach > 0 ? (p.shares / p.reach) * 100 : 0)),
+    shares:   medianAndAvg(posts.map((p) => p.shares)),
+    postCount: posts.length,
+    linkPostCount: linkPosts.length,
+  };
+}
 
 export default async function DashboardPage() {
-  const [files, allPosts] = await Promise.all([getFiles(), getAllPosts()]);
+  const [files, allPosts, followerCount] = await Promise.all([
+    getFiles(),
+    getAllPosts(),
+    getFollowerCount(),
+  ]);
 
   if (allPosts.length === 0) {
     return (
@@ -57,12 +85,13 @@ export default async function DashboardPage() {
     postsByFile[p.file_id].push(p);
   }
 
-  // KPIs
+  // KPIs – totaler (alla perioder)
   const totalReach = allPosts.reduce((s, p) => s + p.reach, 0);
   const totalEngagement = allPosts.reduce((s, p) => s + ((p.reactions + p.comments + p.shares) || p.engagement), 0);
-  const avgReach = Math.round(totalReach / allPosts.length);
-  const engRate = totalReach > 0 ? (totalEngagement / totalReach) * 100 : 0;
-  const avgEngRate = allPosts.reduce((s, p) => s + calcEngRate(p), 0) / allPosts.length;
+
+  // Per-inlägg median/snitt för senaste resp. föregående månad
+  const currentMetrics = buildMonthMetrics(postsByFile[files[0]?.id] ?? []);
+  const prevMetrics = files[1] ? buildMonthMetrics(postsByFile[files[1].id] ?? []) : null;
 
   // Charts
   const contentTypes = getContentTypeBreakdown(allPosts);
@@ -76,7 +105,6 @@ export default async function DashboardPage() {
   // Insikter
   const typeInsights = getTypeInsights(allPosts);
   const recommendation = getContentRecommendation(typeInsights);
-  const trendAlerts = getTrendAlerts(files, postsByFile);
   const keywords = getKeywordInsights(allPosts);
   const frequencyRows = getFrequencyInsights(files, postsByFile);
 
@@ -105,19 +133,15 @@ export default async function DashboardPage() {
           </Link>
         </div>
 
-        {/* Trendvarningar */}
-        {trendAlerts.length > 0 && (
-          <TrendAlert alerts={trendAlerts} lastMonth={months[0] ?? ""} />
-        )}
-
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
-          <KpiCard label="Total räckvidd" value={totalReach} icon={<BarChart2 className="w-5 h-5" />} />
-          <KpiCard label="Totalt engagemang" value={totalEngagement} icon={<Activity className="w-5 h-5" />} />
-          <KpiCard label="Engagement rate" value={`${engRate.toFixed(1)}%`} icon={<TrendingUp className="w-5 h-5" />} />
-          <KpiCard label="Antal inlägg" value={allPosts.length} icon={<Users className="w-5 h-5" />} />
-          <KpiCard label="Snitt räckvidd/inlägg" value={avgReach} icon={<TrendingUp className="w-5 h-5" />} />
-        </div>
+        <KpiSection
+          totalReach={totalReach}
+          totalEngagement={totalEngagement}
+          allPostCount={allPosts.length}
+          followerCount={followerCount}
+          current={currentMetrics}
+          prev={prevMetrics}
+        />
 
         {/* Best Month */}
         {bestFile && (
@@ -140,10 +164,11 @@ export default async function DashboardPage() {
         <ContentRecommendationCard insights={typeInsights} recommendation={recommendation} />
 
         {/* Top 5 */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-4 gap-4">
           <TopPostsCard posts={allPosts} metric="reach" />
           <TopPostsCard posts={allPosts} metric="engagement_rate" />
           <TopPostsCard posts={allPosts} metric="virality" />
+          <TopPostsCard posts={allPosts} metric="ctr" />
         </div>
 
         {/* Underpresterare */}

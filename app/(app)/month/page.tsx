@@ -1,18 +1,19 @@
 export const dynamic = "force-dynamic";
 
 import Header from "@/components/layout/Header";
-import KpiCard from "@/components/dashboard/KpiCard";
 import TopPostsCard from "@/components/dashboard/TopPostsCard";
 import UnderperformersCard from "@/components/dashboard/UnderperformersCard";
 import ContentTypeChart from "@/components/dashboard/ContentTypeChart";
 import EmptyState from "@/components/shared/EmptyState";
-import Card from "@/components/shared/Card";
 import { getFiles, getPostsByMonth, computeMonthStats, getContentTypeBreakdown } from "@/lib/data";
-import { engagementRate, percentChange } from "@/lib/utils";
-import { BarChart2, Activity, Users, TrendingUp, FileDown } from "lucide-react";
+import { medianAndAvg, percentChange, engagementRate } from "@/lib/utils";
+import { calcEngRate } from "@/lib/insights";
+import { FileDown } from "lucide-react";
 import Link from "next/link";
 import MonthSelector from "@/components/month/MonthSelector";
 import AllPostsTable from "@/components/month/AllPostsTable";
+import PostMatrixCard from "@/components/dashboard/PostMatrixCard";
+import MonthKpiSection from "@/components/month/MonthKpiSection";
 
 interface Props {
   searchParams: Promise<{ month?: string }>;
@@ -49,6 +50,17 @@ export default async function MonthPage({ searchParams }: Props) {
   const engChange = prevStats ? percentChange(stats.totalEngagement, prevStats.totalEngagement) : undefined;
   const engRate = engagementRate(stats.totalEngagement, stats.totalReach);
 
+  const currentMetrics = {
+    reachPerPost: medianAndAvg(posts.map((p) => p.reach)),
+    erPerPost: medianAndAvg(posts.map((p) => calcEngRate(p))),
+    postCount: posts.length,
+  };
+  const prevMetrics = prevPosts.length ? {
+    reachPerPost: medianAndAvg(prevPosts.map((p) => p.reach)),
+    erPerPost: medianAndAvg(prevPosts.map((p) => calcEngRate(p))),
+    postCount: prevPosts.length,
+  } : null;
+
   const contentTypes = getContentTypeBreakdown(posts);
 
   return (
@@ -72,13 +84,14 @@ export default async function MonthPage({ searchParams }: Props) {
           <EmptyState title="Inga inlägg" description={`Inga inlägg hittades för ${activeMonth}.`} />
         ) : (
           <>
-            <div className="grid grid-cols-2 xl:grid-cols-5 gap-4">
-              <KpiCard label="Total räckvidd" value={stats.totalReach} change={reachChange} icon={<BarChart2 className="w-5 h-5" />} />
-              <KpiCard label="Totalt engagemang" value={stats.totalEngagement} change={engChange} icon={<Activity className="w-5 h-5" />} />
-              <KpiCard label="Engagement rate" value={`${engRate.toFixed(1)}%`} icon={<TrendingUp className="w-5 h-5" />} />
-              <KpiCard label="Antal inlägg" value={stats.postCount} icon={<Users className="w-5 h-5" />} />
-              <KpiCard label="Snitt räckvidd/inlägg" value={stats.avgReach} icon={<TrendingUp className="w-5 h-5" />} />
-            </div>
+            <MonthKpiSection
+              totalReach={stats.totalReach}
+              totalEngagement={stats.totalEngagement}
+              reachChange={reachChange}
+              engChange={engChange}
+              current={currentMetrics}
+              prev={prevMetrics}
+            />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
               <TopPostsCard posts={posts} metric="reach" />
@@ -89,6 +102,13 @@ export default async function MonthPage({ searchParams }: Props) {
               <UnderperformersCard posts={posts} mode="low_reach" />
               <UnderperformersCard posts={posts} mode="low_eng_rate" />
             </div>
+
+            {posts.length > 0 && (
+              <div>
+                <h2 className="text-base font-semibold text-[#303942] mb-3">Innehållsanalys</h2>
+                <PostMatrixCard posts={posts} />
+              </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
               <div className="xl:col-span-2">

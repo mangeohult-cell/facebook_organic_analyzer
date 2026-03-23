@@ -6,6 +6,7 @@ import { formatNumber, formatDate } from "@/lib/utils";
 import { calcEngRate, calcVirality, getPerformanceScore } from "@/lib/insights";
 import Badge from "@/components/shared/Badge";
 import Card from "@/components/shared/Card";
+import MetricTooltip from "@/components/shared/MetricTooltip";
 import { ChevronUp, ChevronDown } from "lucide-react";
 
 type SortKey = "reach" | "reactions" | "comments" | "shares" | "eng_rate" | "virality" | "score" | "published_at";
@@ -63,12 +64,15 @@ export default function AllPostsTable({ posts, avgReach, avgEngRate }: AllPostsT
         : <ChevronUp className="w-3 h-3 inline ml-0.5" />
       : null;
 
-  const Th = ({ label, k }: { label: string; k: SortKey }) => (
+  const Th = ({ label, k, tooltip }: { label: string; k: SortKey; tooltip?: string }) => (
     <th
       className="text-right px-2 py-2 text-gray-500 font-medium cursor-pointer hover:text-[#ED5821] whitespace-nowrap"
       onClick={() => toggle(k)}
     >
-      {label}<SortIcon k={k} />
+      <span className="inline-flex items-center gap-1 justify-end">
+        {label}<SortIcon k={k} />
+        {tooltip && <span onClick={(e) => e.stopPropagation()}><MetricTooltip text={tooltip} /></span>}
+      </span>
     </th>
   );
 
@@ -90,7 +94,7 @@ export default function AllPostsTable({ posts, avgReach, avgEngRate }: AllPostsT
               <Th label="Deln." k="shares" />
               <Th label="Eng.rate" k="eng_rate" />
               <Th label="Viralitet" k="virality" />
-              <Th label="Score" k="score" />
+              <Th label="Score" k="score" tooltip="Samlat betyg 0–100 som visar hur ett inlägg presterade jämfört med månadens övriga inlägg. Hälften av poängen kommer från räckvidd, hälften från engagement rate – båda mätta mot periodens snitt. Dubbelt snitt eller mer i båda ger 100. Exakt på snitt ger 50. Under snitt ger under 50. Exempel: snittinlägget denna månad når 10 000 personer och har 1% ER. Ett inlägg med 20 000 räckvidd och 2% ER → Score 100. Ett inlägg med 10 000 och 1% ER → Score 50. Ett inlägg med 5 000 och 0,5% ER → Score 25. Färg: grönt = 67–100, gult = 34–66, rött = 0–33." />
               <th className="text-center px-2 py-2 text-gray-500 font-medium">Typ</th>
             </tr>
           </thead>

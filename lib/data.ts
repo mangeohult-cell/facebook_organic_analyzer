@@ -1,6 +1,15 @@
 import { supabase } from "./supabase";
+import { getAdminSupabase } from "./supabase-admin";
 import { Post, UploadedFile, MonthStats } from "@/types";
 import { engagementRate } from "./utils";
+
+function withCtr(post: Omit<Post, "ctr">): Post {
+  const clicks = post.link_clicks ?? 0;
+  const ctr = post.reach > 0 && clicks > 0
+    ? Math.round((clicks / post.reach) * 100 * 100) / 100
+    : 0;
+  return { ...post, link_clicks: clicks, ctr };
+}
 
 export async function getFiles(): Promise<UploadedFile[]> {
   const { data } = await supabase
@@ -16,7 +25,7 @@ export async function getPostsByFile(fileId: string): Promise<Post[]> {
     .select("*")
     .eq("file_id", fileId)
     .order("reach", { ascending: false });
-  return data ?? [];
+  return (data ?? []).map(withCtr);
 }
 
 export async function getAllPosts(): Promise<Post[]> {
@@ -24,7 +33,7 @@ export async function getAllPosts(): Promise<Post[]> {
     .from("posts")
     .select("*")
     .order("reach", { ascending: false });
-  return data ?? [];
+  return (data ?? []).map(withCtr);
 }
 
 export async function getPostsByMonth(month: string): Promise<Post[]> {
@@ -41,7 +50,7 @@ export async function getPostsByMonth(month: string): Promise<Post[]> {
     .select("*")
     .in("file_id", fileIds)
     .order("reach", { ascending: false });
-  return data ?? [];
+  return (data ?? []).map(withCtr);
 }
 
 export function computeMonthStats(month: string, posts: Post[]): MonthStats {
@@ -87,6 +96,16 @@ export function getUnderperformers(posts: Post[], minReach = 3000, limit = 5) {
     .filter((p) => p.reach >= minReach)
     .sort((a, b) => engagementRate(a.engagement, a.reach) - engagementRate(b.engagement, b.reach))
     .slice(0, limit);
+}
+
+export async function getFollowerCount(): Promise<number> {
+  const { data } = await getAdminSupabase()
+    .from("page_settings")
+    .select("value")
+    .eq("key", "follower_count")
+    .single();
+  const n = data ? parseInt(data.value, 10) : 0;
+  return isNaN(n) ? 0 : n;
 }
 
 export function getTrendData(files: UploadedFile[], allPosts: Post[]) {

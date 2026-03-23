@@ -1,3 +1,15 @@
+export function medianAndAvg(values: number[]): { median: number; avg: number } {
+  if (values.length === 0) return { median: 0, avg: 0 };
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const median =
+    sorted.length % 2 === 0
+      ? (sorted[mid - 1] + sorted[mid]) / 2
+      : sorted[mid];
+  const avg = values.reduce((s, v) => s + v, 0) / values.length;
+  return { median, avg };
+}
+
 export function formatNumber(n: number): string {
   if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
   if (n >= 1_000) return (n / 1_000).toFixed(1) + "K";

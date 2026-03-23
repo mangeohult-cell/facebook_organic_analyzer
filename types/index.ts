@@ -19,6 +19,8 @@ export interface Post {
   comments: number;
   shares: number;
   saves?: number;
+  link_clicks: number;
+  ctr: number;
   post_type: "image" | "video" | "link" | "text";
 }
 

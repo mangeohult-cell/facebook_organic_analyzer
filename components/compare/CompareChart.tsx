@@ -18,7 +18,7 @@ export default function CompareChart({ stats, metric }: CompareChartProps) {
 
   const data = stats.map((s) => ({
     month: s.month.split(" ")[0],
-    [s.month]: s[metric],
+    value: s[metric],
   }));
 
   return (
@@ -30,17 +30,7 @@ export default function CompareChart({ stats, metric }: CompareChartProps) {
           <XAxis dataKey="month" tick={{ fontSize: 12 }} />
           <YAxis tick={{ fontSize: 12 }} />
           <Tooltip />
-          <Legend />
-          {stats.map((s, i) => (
-            <Line
-              key={s.month}
-              type="monotone"
-              dataKey={s.month}
-              stroke={COLORS[i % COLORS.length]}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          ))}
+          <Line type="monotone" dataKey="value" name={label} stroke={COLORS[0]} strokeWidth={2} dot={{ r: 5 }} />
         </LineChart>
       </ResponsiveContainer>
     </Card>

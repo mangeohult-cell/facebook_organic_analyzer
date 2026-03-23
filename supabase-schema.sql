@@ -20,7 +20,8 @@ create table if not exists posts (
   reactions integer not null default 0,
   comments integer not null default 0,
   shares integer not null default 0,
-  post_type text not null default 'text'
+  post_type text not null default 'text',
+  link_clicks integer not null default 0
 );
 
 -- Index för snabba queries
@@ -50,6 +51,19 @@ create policy "authenticated insert posts" on posts
 
 create policy "authenticated delete posts" on posts
   for delete using (auth.role() = 'authenticated');
+
+-- -----------------------------------------------
+-- Sidinställningar (t.ex. antal följare)
+-- -----------------------------------------------
+
+create table if not exists page_settings (
+  key text primary key,
+  value text not null,
+  updated_at timestamptz not null default now()
+);
+
+-- Skrivs och läses enbart server-side via service role – ingen RLS behövs
+-- (service role kringgår RLS automatiskt)
 
 -- -----------------------------------------------
 -- Whitelist-tabell för e-post-åtkomstkontroll
