@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Facebook Organic Analyzer
 
-## Getting Started
+Verktyg för att analysera organisk räckvidd och engagemang från Facebook Insights. Ladda upp CSV-exportfiler från Facebook och få automatisk statistik, trender och innehållsrekommendationer per månad.
 
-First, run the development server:
+## Funktioner
+
+- **Dashboard** – aggregerade KPI:er (räckvidd, engagemang, ER, CTR, viralitet) med median/snitt-toggle
+- **Månadsvy** – detaljerad statistik per månad med per-inlägg-prestanda och score
+- **Jämförelsevy** – jämför upp till 6 månader sida vid sida
+- **CSV-uppladdning** – stöder både svenska och engelska Facebook Insights-exportfiler
+- **PDF-export** – exportera månads- och årsrapporter
+- **Adminpanel** – hantera teammedlemmar och e-posttillträdeslista
+
+## Teknikstack
+
+- **Next.js 14** (App Router) + TypeScript
+- **Tailwind CSS**
+- **Recharts** – diagram
+- **Clerk** – autentisering (Google OAuth)
+- **Supabase** – databas (PostgreSQL)
+- **Vercel** – hosting
+
+## Sätta upp projektet
+
+### 1. Klona repot
+
+```bash
+git clone https://github.com/mangeohult-cell/facebook_organic_analyzer.git
+cd facebook_organic_analyzer
+npm install
+```
+
+### 2. Skapa externa tjänster
+
+Du behöver konton hos tre tjänster:
+
+**Supabase** (`https://supabase.com`)
+- Skapa ett nytt projekt
+- Gå till **SQL Editor** och kör hela innehållet i `supabase-schema.sql`
+- Hämta URL och nycklar under **Settings → API**
+
+**Clerk** (`https://clerk.com`)
+- Skapa en ny applikation
+- Aktivera **Google** under *User & Authentication → Social Connections*
+- Stäng av e-post/lösenord under *User & Authentication → Email, Phone, Username*
+- Hämta nycklar under **API Keys**
+
+**Vercel** (`https://vercel.com`)
+- Importera repot från GitHub
+- Lägg till miljövariabler (se nedan) under *Settings → Environment Variables*
+
+### 3. Konfigurera miljövariabler
+
+Kopiera `.env.example` till `.env.local` och fyll i dina värden:
+
+```bash
+cp .env.example .env.local
+```
+
+| Variabel | Beskrivning |
+|----------|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase-projektets URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon-nyckel (publik) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role-nyckel (hemlig) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk publik nyckel |
+| `CLERK_SECRET_KEY` | Clerk hemlig nyckel |
+| `ADMIN_EMAIL` | E-post till första administratören |
+
+### 4. Starta lokalt
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Öppna `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Åtkomstkontroll
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Appen tillåter automatiskt alla konton med `@sverigeslarare.se`-domän. Enstaka undantag (t.ex. externa Gmail-adresser) läggs till manuellt i adminpanelen under `/admin`.
 
-## Learn More
+## Teknisk dokumentation
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Se `CLAUDE.md` för detaljerad beskrivning av arkitektur, databasschema, CSV-parsning och komponentstruktur.
