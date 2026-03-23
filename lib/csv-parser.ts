@@ -170,6 +170,9 @@ export function parseFacebookCSV(csvText: string): ParseResult {
 
     const reach = toInt(raw.reach);
     const link_clicks = toInt(raw.link_clicks);
+    const ctr = reach > 0 && link_clicks > 0
+      ? Math.round((link_clicks / reach) * 100 * 100) / 100
+      : 0;
 
     posts.push({
       title: raw.title ?? `Inlägg ${i + 1}`,
@@ -180,6 +183,7 @@ export function parseFacebookCSV(csvText: string): ParseResult {
       comments,
       shares,
       link_clicks,
+      ctr,
       post_type: parsePostType(raw.post_type),
     });
   }
